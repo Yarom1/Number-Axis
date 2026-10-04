@@ -28,8 +28,8 @@ TOOLS = {
 
 PACKAGE = "com.numberaxis.app"
 LABEL = "ציר המספרים"
-VERSION_CODE = 3
-VERSION_NAME = "1.2"
+VERSION_CODE = 4
+VERSION_NAME = "1.3"
 MIN_SDK = 21
 TARGET_SDK = 29  # v1 (JAR) signing is accepted for targetSdk < 30
 

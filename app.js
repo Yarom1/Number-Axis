@@ -14,8 +14,8 @@
     { from: -20, to: 20 },
   ];
   const MAX_SPAN = 200;
-  const MIN_SPACING = 40; // px per number before the axis starts scrolling
-  const SIDE_PAD = 34; // room for the arrow heads at both ends
+  const SIDE_PAD = 24; // room for the arrow heads at both ends
+  const MIN_FONT = 15; // below this, long axes label only every 2nd/5th/10th number
 
   const $ = (id) => document.getElementById(id);
   const svg = $("axis");
@@ -144,19 +144,31 @@
     const { from, to } = state.range;
     const count = to - from + 1;
     const avail = wrap.clientWidth || window.innerWidth;
-    let spacing = (avail - SIDE_PAD * 2) / count;
-    if (spacing < MIN_SPACING) spacing = MIN_SPACING;
-    const width = Math.max(avail, SIDE_PAD * 2 + spacing * count);
+    // The whole axis always fits the screen width – no scrolling.
+    const width = avail;
+    const spacing = (width - SIDE_PAD * 2) / count;
     const arcH = Math.max(22, Math.min(spacing * 0.75, 70));
-    const fontSize = Math.max(18, Math.min(spacing * 0.62, 46));
-    const labelR = Math.max(10, Math.min(spacing * 0.3, 15));
+    const longest = Math.max(String(from).length, String(to).length);
+    // Pick how often to write a number so the labels stay readable.
+    let labelStep = 1;
+    for (const step of [1, 2, 5, 10, 20]) {
+      labelStep = step;
+      if (fitFont(spacing * step, longest) >= MIN_FONT) break;
+    }
+    const fontSize = Math.min(46, labelStep === 1 ? spacing * 0.8 : fitFont(spacing * labelStep, longest));
+    const labelR = Math.max(9, Math.min(spacing * 0.3, 15));
     const lineY = arcH + labelR * 2 + 30;
     const numY = lineY + 20 + fontSize * 0.75;
     const height = numY + fontSize * 0.9 + 10;
     return {
-      width, height, spacing, arcH, fontSize, labelR, lineY, numY,
+      width, height, spacing, arcH, fontSize, labelR, lineY, numY, labelStep,
       x: (n) => SIDE_PAD + spacing * (n - from + 0.5),
     };
+  }
+
+  // Largest font whose label of `chars` characters fits in `room` px (Fredoka digits ≈ 0.62em).
+  function fitFont(room, chars) {
+    return (room * 0.86) / (chars * 0.62);
   }
 
   function el(name, attrs = {}, parent) {
@@ -201,12 +213,18 @@
       // Small tick under each number, like in the notebook.
       el("line", { x1: x, y1: lineY - 11, x2: x, y2: lineY + 11, stroke: ink, "stroke-width": 2.5, "stroke-linecap": "round" }, g);
       const pop = el("g", { class: "pop" }, g);
+      if (n % geo.labelStep !== 0) {
+        // Crowded axis: unlabelled numbers are marked with a dot on the line when counted.
+        el("circle", { class: "bubble", cx: x, cy: lineY, r: Math.max(3, Math.min(spacing * 0.42, 8)), fill: lineColor(n) }, pop);
+        cols.set(n, g);
+        continue;
+      }
       const bubble = el("circle", { class: "bubble", cx: x, cy: numY, fill: softColor(n), stroke: lineColor(n), "stroke-width": 2.5 }, pop);
       const label = String(n).replace("-", "−");
       const t = el("text", { class: "num", x, y: numY, "font-size": fontSize, fill: textColor(n) }, pop);
       t.textContent = label;
       // Shrink long labels (e.g. 100, −20) so neighbours never touch.
-      const maxW = spacing * 0.84;
+      const maxW = spacing * geo.labelStep * 0.82;
       const w = t.getComputedTextLength();
       let fs = fontSize;
       if (w > maxW) {
@@ -214,7 +232,7 @@
         t.setAttribute("font-size", fs);
       }
       // The bubble stays inside the number's own column.
-      bubble.setAttribute("r", Math.min(spacing * 0.45, Math.max(fs * 0.85, Math.min(w, maxW) / 2 + 6)));
+      bubble.setAttribute("r", Math.min(spacing * geo.labelStep * 0.44, Math.max(fs * 0.85, Math.min(w, maxW) / 2 + 6)));
       cols.set(n, g);
     }
 
@@ -253,7 +271,10 @@
       const left = `${p.x2 - ux * s - uy * s * 0.7} ${p.y - uy * s + ux * s * 0.7}`;
       const right = `${p.x2 - ux * s + uy * s * 0.7} ${p.y - uy * s - ux * s * 0.7}`;
       el("path", { d: `M ${left} L ${p.x2} ${p.y} L ${right}`, fill: "none", stroke: color, "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" }, arcsLayer);
-      // Jump number on top of the arc.
+      // Jump number on top of the arc (on a crowded axis only every few jumps, and always the last).
+      const every = Math.ceil((geo.labelR * 2 + 4) / geo.spacing);
+      const lastJump = seq.length - 1;
+      if (i !== lastJump && (i % every !== 0 || lastJump - i < every)) continue;
       const lg = el("g", { class: "arc-label" }, arcsLayer);
       el("circle", { cx: p.xm, cy: p.peakY - geo.labelR + 2, r: geo.labelR, stroke: color }, lg);
       const t = el("text", { x: p.xm, y: p.peakY - geo.labelR + 2, "font-size": geo.labelR * 1.15, fill: textColor(b) }, lg);
@@ -294,15 +315,6 @@
     messageEl.className = "message" + (kind ? " " + kind : "");
   }
 
-  function scrollIntoViewIfNeeded(n) {
-    if (wrap.scrollWidth <= wrap.clientWidth) return;
-    const x = geo.x(n);
-    const margin = geo.spacing * 2;
-    if (x < wrap.scrollLeft + margin || x > wrap.scrollLeft + wrap.clientWidth - margin) {
-      wrap.scrollTo({ left: x - wrap.clientWidth / 2, behavior: "smooth" });
-    }
-  }
-
   /* ---------- Counting rules ---------- */
   function wrong(clicked, expected) {
     playError();
@@ -313,7 +325,6 @@
       say("הגענו לסוף הציר! אפשר ללחוץ על ניקוי ולהתחיל מחדש", "error");
     } else if (valid.length === 1) {
       say(`אופס! סופרים לפי הסדר – המספר הבא הוא ${valid[0]}`, "error");
-      scrollIntoViewIfNeeded(valid[0]);
     } else {
       say(`אופס! סופרים לפי הסדר – ממשיכים ל-${valid.join(" או ל-")}`, "error");
     }
@@ -324,7 +335,6 @@
     playCount(state.seq.length - 1);
     renderCount(true);
     flash(n, "just", 400);
-    scrollIntoViewIfNeeded(n);
   }
 
   function onNumber(n) {
@@ -376,7 +386,6 @@
     if (!silent) playClear();
     renderCount();
     say("לחצו על מספר כדי להתחיל לספור");
-    wrap.scrollTo({ left: 0 });
   }
 
   /* ---------- Settings ---------- */
@@ -410,7 +419,7 @@
   }
 
   /* ---------- Events ---------- */
-  // "click" (not pointerdown) so swiping a long, scrollable axis doesn't count numbers.
+  // "click" (not pointerdown) so a swipe across the screen doesn't count numbers.
   svg.addEventListener("click", (e) => {
     const g = e.target.closest(".col");
     if (!g) return;
