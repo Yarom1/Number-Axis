@@ -107,6 +107,11 @@
   /* ---------- Keep the screen on (Screen Wake Lock API) ---------- */
   let wakeLock = null;
   async function requestWakeLock() {
+    // Inside the Android app the native shell keeps the screen on.
+    if (window.AndroidApp) {
+      setWakeStatus(true);
+      return;
+    }
     if (!("wakeLock" in navigator)) {
       setWakeStatus(false, "הדפדפן לא תומך בהשארת המסך דלוק");
       return;
