@@ -20,6 +20,9 @@
   const FIT_COUNT = 21;
   const MIN_FONT = 15; // below this, long axes label only every 2nd/5th/10th number
 
+  // What is shown above the axis: the full exercise, the exercise without its result, or only the jump count.
+  const MODES = ["full", "noresult", "count"];
+
   const $ = (id) => document.getElementById(id);
   const svg = $("axis");
   const wrap = $("axisWrap");
@@ -42,6 +45,8 @@
     seq: [], // counted numbers, in order
     dir: 0, // +1 counting up, -1 counting down, 0 not decided yet
     sound: storage.get("sound", true),
+    arcs: storage.get("arcs", true) !== false, // draw the jump arcs
+    mode: MODES.includes(storage.get("mode", "full")) ? storage.get("mode", "full") : "full",
   };
 
   function validRange(r) {
@@ -254,7 +259,7 @@
     const { seq } = state;
     arcsLayer.innerHTML = "";
 
-    for (let i = 1; i < seq.length; i++) {
+    for (let i = 1; state.arcs && i < seq.length; i++) {
       const a = seq[i - 1], b = seq[i];
       const color = lineColor(b);
       const p = arcPath(a, b);
@@ -293,10 +298,18 @@
     const jumps = Math.max(0, seq.length - 1);
     $("jumpCount").textContent = jumps;
     const eq = $("equation");
-    if (jumps > 0) {
+    if (jumps > 0 && state.mode !== "count") {
       const start = seq[0], end = seq[seq.length - 1];
       const fmt = (v) => (v < 0 ? `(${String(v).replace("-", "−")})` : String(v));
-      eq.textContent = `${fmt(start)} ${state.dir > 0 ? "+" : "−"} ${jumps} = ${String(end).replace("-", "−")}`;
+      eq.textContent = `${fmt(start)} ${state.dir > 0 ? "+" : "−"} ${jumps} = `;
+      const result = document.createElement("span");
+      if (state.mode === "noresult") {
+        result.className = "unknown";
+        result.textContent = "?";
+      } else {
+        result.textContent = String(end).replace("-", "−");
+      }
+      eq.appendChild(result);
     } else {
       eq.textContent = "";
     }
@@ -477,7 +490,31 @@
     resizeTimer = setTimeout(renderAxis, 80);
   });
 
+  function syncDisplayChips() {
+    document.querySelectorAll("#arcsChips .chip").forEach((b) =>
+      b.classList.toggle("active", (b.dataset.arcs === "on") === state.arcs));
+    document.querySelectorAll("#modeChips .chip").forEach((b) =>
+      b.classList.toggle("active", b.dataset.mode === state.mode));
+  }
+  $("arcsChips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    state.arcs = b.dataset.arcs === "on";
+    storage.set("arcs", state.arcs);
+    syncDisplayChips();
+    renderCount();
+  });
+  $("modeChips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    state.mode = b.dataset.mode;
+    storage.set("mode", state.mode);
+    syncDisplayChips();
+    renderCount();
+  });
+
   syncSoundBtn();
+  syncDisplayChips();
   renderPresets();
   renderAxis();
   requestWakeLock();

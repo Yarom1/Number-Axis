@@ -105,6 +105,7 @@ h1 {
   direction: ltr;
   unicode-bidi: isolate;
 }
+.chip.text { direction: rtl; font-family: "Varela Round", var(--font-kids); }
 .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .range-error { color: var(--danger); font-size: 15px; }
 
@@ -128,6 +129,7 @@ main {
   min-height: 48px;
 }
 .counter b { font-family: var(--font-kids); font-size: 1.4em; color: #5b8def; }
+.equation .unknown { color: #e08a2c; }
 .equation { unicode-bidi: isolate; direction: ltr; font-family: var(--font-kids); font-size: 1.3em; font-weight: 600; }
 .message { color: var(--muted); transition: color .2s; }
 .message.error { color: var(--danger); font-weight: bold; }
