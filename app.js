@@ -15,6 +15,9 @@
   ];
   const MAX_SPAN = 200;
   const SIDE_PAD = 24; // room for the arrow heads at both ends
+  // Axes up to this many numbers fit on one screen (1–20, 0–20, −10–10). Longer ones scroll
+  // sideways and keep the same number size as a 20-number axis.
+  const FIT_COUNT = 21;
   const MIN_FONT = 15; // below this, long axes label only every 2nd/5th/10th number
 
   const $ = (id) => document.getElementById(id);
@@ -144,9 +147,8 @@
     const { from, to } = state.range;
     const count = to - from + 1;
     const avail = wrap.clientWidth || window.innerWidth;
-    // The whole axis always fits the screen width – no scrolling.
-    const width = avail;
-    const spacing = (width - SIDE_PAD * 2) / count;
+    const spacing = (avail - SIDE_PAD * 2) / (count <= FIT_COUNT ? count : 20);
+    const width = SIDE_PAD * 2 + spacing * count;
     const arcH = Math.max(22, Math.min(spacing * 0.75, 70));
     const longest = Math.max(String(from).length, String(to).length);
     // Pick how often to write a number so the labels stay readable.
@@ -315,6 +317,16 @@
     messageEl.className = "message" + (kind ? " " + kind : "");
   }
 
+  // On a long, scrollable axis keep the number being counted (or hinted) in view.
+  function scrollIntoViewIfNeeded(n) {
+    if (wrap.scrollWidth <= wrap.clientWidth) return;
+    const x = geo.x(n);
+    const margin = geo.spacing * 2;
+    if (x < wrap.scrollLeft + margin || x > wrap.scrollLeft + wrap.clientWidth - margin) {
+      wrap.scrollTo({ left: x - wrap.clientWidth / 2, behavior: "smooth" });
+    }
+  }
+
   /* ---------- Counting rules ---------- */
   function wrong(clicked, expected) {
     playError();
@@ -325,6 +337,7 @@
       say("הגענו לסוף הציר! אפשר ללחוץ על ניקוי ולהתחיל מחדש", "error");
     } else if (valid.length === 1) {
       say(`אופס! סופרים לפי הסדר – המספר הבא הוא ${valid[0]}`, "error");
+      scrollIntoViewIfNeeded(valid[0]);
     } else {
       say(`אופס! סופרים לפי הסדר – ממשיכים ל-${valid.join(" או ל-")}`, "error");
     }
@@ -335,6 +348,7 @@
     playCount(state.seq.length - 1);
     renderCount(true);
     flash(n, "just", 400);
+    scrollIntoViewIfNeeded(n);
   }
 
   function onNumber(n) {
@@ -416,6 +430,7 @@
     renderPresets();
     clearAll(true);
     showSettings(false);
+    wrap.scrollLeft = 0;
   }
 
   /* ---------- Events ---------- */

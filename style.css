@@ -136,7 +136,9 @@ main {
 /* Spread across the whole screen width */
 .axis-wrap {
   width: 100%;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 #axis { display: block; touch-action: manipulation; }
 #axis .col { outline: none; }
