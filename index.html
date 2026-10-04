@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fdfcf7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ציר המספרים">
+  <title>ציר המספרים</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>ציר המספרים</h1>
+    <div class="top-tools">
+      <span id="wakeStatus" class="pill" title="מצב שמירת המסך דלוק">💡 <span id="wakeText">המסך יישאר דלוק</span></span>
+      <button id="soundBtn" class="icon-btn" type="button" aria-pressed="true" title="צלילים">🔊</button>
+      <button id="settingsBtn" class="icon-btn" type="button" aria-expanded="false" aria-controls="settings" title="הגדרות הציר">⚙️</button>
+    </div>
+  </header>
+
+  <section id="settings" class="settings" hidden>
+    <div class="row">
+      <span class="label">אורך הציר:</span>
+      <div class="chips" id="presets"></div>
+    </div>
+    <div class="row">
+      <label>מ- <input id="fromInput" type="number" inputmode="numeric" step="1"></label>
+      <label>עד <input id="toInput" type="number" inputmode="numeric" step="1"></label>
+      <button id="applyRange" class="btn small" type="button">עדכון</button>
+      <span id="rangeError" class="range-error" role="alert"></span>
+    </div>
+  </section>
+
+  <main>
+    <div class="info">
+      <div class="counter">קפיצות: <b id="jumpCount">0</b></div>
+      <div id="equation" class="equation" dir="ltr"></div>
+      <div id="message" class="message" role="status" aria-live="polite">לחצו על מספר כדי להתחיל לספור</div>
+    </div>
+
+    <div id="axisWrap" class="axis-wrap" dir="ltr">
+      <svg id="axis" role="group" aria-label="ציר מספרים"></svg>
+    </div>
+
+    <div class="actions">
+      <button id="undoBtn" class="btn" type="button">↩️ צעד אחורה</button>
+      <button id="clearBtn" class="btn primary" type="button">🧹 ניקוי והתחלה מחדש</button>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

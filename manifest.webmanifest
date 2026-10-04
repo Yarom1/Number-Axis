@@ -1,0 +1,12 @@
+{
+  "name": "ציר המספרים",
+  "short_name": "ציר מספרים",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#fdfcf7",
+  "theme_color": "#fdfcf7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
