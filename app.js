@@ -14,7 +14,7 @@
     { from: -20, to: 20 },
   ];
   const MAX_SPAN = 200;
-  const MIN_SPACING = 34; // px per number before the axis starts scrolling
+  const MIN_SPACING = 40; // px per number before the axis starts scrolling
   const SIDE_PAD = 34; // room for the arrow heads at both ends
 
   const $ = (id) => document.getElementById(id);
@@ -148,10 +148,10 @@
     if (spacing < MIN_SPACING) spacing = MIN_SPACING;
     const width = Math.max(avail, SIDE_PAD * 2 + spacing * count);
     const arcH = Math.max(22, Math.min(spacing * 0.75, 70));
-    const fontSize = Math.max(14, Math.min(spacing * 0.5, 36));
+    const fontSize = Math.max(18, Math.min(spacing * 0.62, 46));
     const labelR = Math.max(10, Math.min(spacing * 0.3, 15));
     const lineY = arcH + labelR * 2 + 30;
-    const numY = lineY + 18 + fontSize * 0.75;
+    const numY = lineY + 20 + fontSize * 0.75;
     const height = numY + fontSize * 0.9 + 10;
     return {
       width, height, spacing, arcH, fontSize, labelR, lineY, numY,
@@ -201,12 +201,20 @@
       // Small tick under each number, like in the notebook.
       el("line", { x1: x, y1: lineY - 11, x2: x, y2: lineY + 11, stroke: ink, "stroke-width": 2.5, "stroke-linecap": "round" }, g);
       const pop = el("g", { class: "pop" }, g);
-      const r = Math.min(spacing * 0.48, fontSize * 0.95);
-      el("circle", { class: "bubble", cx: x, cy: numY, r, fill: softColor(n), stroke: lineColor(n), "stroke-width": 2.5 }, pop);
+      const bubble = el("circle", { class: "bubble", cx: x, cy: numY, fill: softColor(n), stroke: lineColor(n), "stroke-width": 2.5 }, pop);
       const label = String(n).replace("-", "−");
-      const fs = label.length >= 3 ? fontSize * 0.82 : fontSize;
-      const t = el("text", { class: "num", x, y: numY, "font-size": fs, fill: textColor(n) }, pop);
+      const t = el("text", { class: "num", x, y: numY, "font-size": fontSize, fill: textColor(n) }, pop);
       t.textContent = label;
+      // Shrink long labels (e.g. 100, −20) so neighbours never touch.
+      const maxW = spacing * 0.84;
+      const w = t.getComputedTextLength();
+      let fs = fontSize;
+      if (w > maxW) {
+        fs = fontSize * (maxW / w);
+        t.setAttribute("font-size", fs);
+      }
+      // The bubble stays inside the number's own column.
+      bubble.setAttribute("r", Math.min(spacing * 0.45, Math.max(fs * 0.85, Math.min(w, maxW) / 2 + 6)));
       cols.set(n, g);
     }
 
