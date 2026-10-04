@@ -76,6 +76,7 @@ h1 {
   flex-direction: column;
   gap: 10px;
 }
+.settings[hidden] { display: none; }
 .settings .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .settings .label { font-weight: bold; }
 .settings input {

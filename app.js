@@ -398,7 +398,7 @@
     storage.set("range", v);
     renderPresets();
     clearAll(true);
-    renderAxis();
+    showSettings(false);
   }
 
   /* ---------- Events ---------- */
@@ -421,12 +421,12 @@
   $("applyRange").addEventListener("click", () => {
     setRange({ from: parseInt($("fromInput").value, 10), to: parseInt($("toInput").value, 10) });
   });
-  $("settingsBtn").addEventListener("click", () => {
-    const s = $("settings");
-    s.hidden = !s.hidden;
-    $("settingsBtn").setAttribute("aria-expanded", String(!s.hidden));
+  function showSettings(show) {
+    $("settings").hidden = !show;
+    $("settingsBtn").setAttribute("aria-expanded", String(show));
     renderAxis();
-  });
+  }
+  $("settingsBtn").addEventListener("click", () => showSettings($("settings").hidden));
   const soundBtn = $("soundBtn");
   function syncSoundBtn() {
     soundBtn.textContent = state.sound ? "🔊" : "🔇";
