@@ -95,6 +95,15 @@
 
   // Major pentatonic notes, so consecutive clicks always sound pleasant.
   const PENTA = [0, 2, 4, 7, 9];
+  /* ---------- Vibration ---------- */
+  // Inside the Android app the native bridge vibrates; in a browser use the Vibration API.
+  function vibrate(ms) {
+    try {
+      if (window.AndroidApp && window.AndroidApp.vibrate) window.AndroidApp.vibrate(ms);
+      else if (navigator.vibrate) navigator.vibrate(ms);
+    } catch { /* no vibration on this device */ }
+  }
+
   function playCount(step) {
     if (!state.sound) return;
     const semis = PENTA[step % 5] + 12 * (Math.floor(step / 5) % 2); // stay within two octaves
@@ -216,7 +225,9 @@
     for (let n = from; n <= to; n++) {
       const x = geo.x(n);
       const g = el("g", { class: "col", role: "button", tabindex: 0, "aria-label": String(n), "data-n": n }, svg);
-      el("rect", { class: "hit", x: x - spacing / 2, y: 0, width: spacing, height: geo.height }, g);
+      // Only the tick on the line and the number below it are tappable, not the empty space above.
+      const hitTop = lineY - 20;
+      el("rect", { class: "hit", x: x - spacing / 2, y: hitTop, width: spacing, height: geo.height - hitTop }, g);
       // Small tick under each number, like in the notebook.
       el("line", { x1: x, y1: lineY - 11, x2: x, y2: lineY + 11, stroke: ink, "stroke-width": 2.5, "stroke-linecap": "round" }, g);
       const pop = el("g", { class: "pop" }, g);
@@ -342,6 +353,7 @@
 
   /* ---------- Counting rules ---------- */
   function wrong(clicked, expected) {
+    vibrate(90); // a longer buzz for a wrong number
     playError();
     flash(clicked, "wrong", 450);
     const valid = expected.filter((n) => cols.has(n));
@@ -357,6 +369,7 @@
   }
 
   function countTo(n) {
+    vibrate(30);
     state.seq.push(n);
     playCount(state.seq.length - 1);
     renderCount(true);
@@ -375,6 +388,7 @@
 
     const last = seq[seq.length - 1];
     if (n === last) {
+      vibrate(30);
       flash(n, "just", 400); // a double tap should never lose progress
       return;
     }

@@ -1,8 +1,11 @@
 package com.numberaxis.app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -17,9 +20,25 @@ public class MainActivity extends Activity {
 
     /** Exposed to the page as window.AndroidApp. */
     public static class Bridge {
+        private final Vibrator vibrator;
+
+        Bridge(Context context) {
+            vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+        }
+
         @JavascriptInterface
         public boolean keepsScreenOn() {
             return true;
+        }
+
+        @JavascriptInterface
+        public void vibrate(long ms) {
+            if (vibrator == null || !vibrator.hasVibrator()) return;
+            if (Build.VERSION.SDK_INT >= 26) {
+                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(ms);
+            }
         }
     }
 
@@ -39,7 +58,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setTextZoom(100);
         web.setWebViewClient(new WebViewClient());
-        web.addJavascriptInterface(new Bridge(), "AndroidApp");
+        web.addJavascriptInterface(new Bridge(this), "AndroidApp");
         web.setBackgroundColor(0xFFFDFCF7);
         setContentView(web);
 

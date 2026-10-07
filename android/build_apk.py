@@ -28,8 +28,8 @@ TOOLS = {
 
 PACKAGE = "com.numberaxis.app"
 LABEL = "ציר המספרים"
-VERSION_CODE = 6
-VERSION_NAME = "1.5"
+VERSION_CODE = 7
+VERSION_NAME = "1.6"
 MIN_SDK = 21
 TARGET_SDK = 29  # v1 (JAR) signing is accepted for targetSdk < 30
 
@@ -72,6 +72,7 @@ def manifest_xml():
                          ("versionName", T_STRING, VERSION_NAME)], [
         ("uses-sdk", [("minSdkVersion", T_INT_DEC, MIN_SDK),
                       ("targetSdkVersion", T_INT_DEC, TARGET_SDK)], []),
+        ("uses-permission", [("name", T_STRING, "android.permission.VIBRATE")], []),
         ("application", [("theme", T_REF, THEME_FULLSCREEN),
                          ("label", T_STRING, LABEL),
                          ("icon", T_REF, ICON_RES_ID),
